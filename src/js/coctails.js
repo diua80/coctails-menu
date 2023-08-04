@@ -1,8 +1,13 @@
+
 import * as basicLightbox from 'basiclightbox';
 
 import 'basiclightbox/dist/basicLightbox.min.css';
 
 import { CoctailsAPI } from './CoctailsAPI';
+
+import { createCoctailsList } from './renderGallery';
+import "./switcher";
+import "./scrollUp";
 
 const api = new CoctailsAPI();
 
@@ -39,23 +44,13 @@ async function onCategoryClick(event) {
   try {
     const data = await api.getCoctailsByCategory(category);
     console.log(data);
-    createCoctailsList(data);
+    createCoctailsList(data, listCoctails);
   } catch (err) {
     console.log(err);
   }
   // console.log(event.target);
 }
 
-function createCoctailsList(data) {
-  const markup = data
-    .map(
-      ({ strDrink, idDrink, strDrinkThumb }) =>
-        `<li id=${idDrink}><h2>${strDrink}</h2><img src=${strDrinkThumb} alt=${strDrink} width="300"/></li>`
-    )
-    .join('');
-
-  listCoctails.innerHTML = markup;
-}
 listCoctails.addEventListener('click', openModalWindow);
 
 async function openModalWindow(event) {
@@ -66,13 +61,25 @@ async function openModalWindow(event) {
       createCoctailDetails(data[0]);
       const btnAddToLocalStor = document.getElementById("modalBtn");
 
+    if (!collection.find(el => el.idDrink === data[0].idDrink)) {
+       btnAddToLocalStor.textContent="Add to collection" 
+    } else {
+      btnAddToLocalStor.textContent = "Remove from collection";
+      }
       btnAddToLocalStor.addEventListener("click", saveToLocalStorage);
 
       function saveToLocalStorage(e) {
-          if (!collection.find(el => el.idDrink === data[0].idDrink)) {
+        if (btnAddToLocalStor.textContent === "Add to collection") {
+          // console.log("Add");
               collection.push(data[0]);
               localStorage.setItem(KEY, JSON.stringify(collection));
               btnAddToLocalStor.textContent = "Remove from collection";
+        } else {
+          // console.log("Remove");
+            const coctalIndex = collection.findIndex(el => el.idDrink === data[0].idDrink);
+            collection.splice(coctalIndex, 1);
+            localStorage.setItem(KEY, JSON.stringify(collection));
+            btnAddToLocalStor.textContent = "Add to collection";
           }
       }
   } catch (err) {
